@@ -38,7 +38,7 @@ usage() {
     echo "  --prompt <text>       Prompt to send to Claude Code"
     echo "  --monitor             Monitor session in real-time (blocks)"
     echo "  --wait                Wait for completion"
-    echo "  --interactive         Ask user for approval on each prompt (via pending file)"
+    echo "  --auto                Auto-approve all prompts (default: interactive)"
     echo ""
     echo "Examples:"
     echo "  $0 --workdir ~/code/myproject --prompt 'Add error handling to api.py'"
@@ -52,7 +52,7 @@ WORKDIR="$(pwd)"
 PROMPT=""
 MONITOR=false
 WAIT=false
-INTERACTIVE=false
+INTERACTIVE=true  # Default to interactive mode for safety
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -76,8 +76,8 @@ while [[ $# -gt 0 ]]; do
             WAIT=true
             shift
             ;;
-        --interactive)
-            INTERACTIVE=true
+        --auto)
+            INTERACTIVE=false
             shift
             ;;
         -h|--help)
