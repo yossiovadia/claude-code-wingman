@@ -120,9 +120,13 @@ sleep 5
 
 # Step 4: Send prompt
 echo "[Orchestrator] Sending prompt..."
-tmux send-keys -t "$SESSION_NAME" "$PROMPT" C-m
-
-# Wait a moment for prompt to be accepted
+tmux send-keys -t "$SESSION_NAME" "$PROMPT"
+sleep 1
+# Send Enter explicitly (C-m might not always work reliably in tmux)
+tmux send-keys -t "$SESSION_NAME" C-m
+sleep 1
+# Double-tap Enter to ensure it goes through
+tmux send-keys -t "$SESSION_NAME" C-m
 sleep 2
 
 echo ""
