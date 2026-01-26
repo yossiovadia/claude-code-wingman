@@ -1,0 +1,13 @@
+# Logs
+*.log
+
+# Temp files
+tmp/
+*.tmp
+
+# API keys / secrets
+.env
+secrets/
+
+# OS
+.DS_Store
