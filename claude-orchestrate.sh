@@ -118,6 +118,19 @@ fi
 echo "[Orchestrator] Waiting for Claude Code to initialize..."
 sleep 5
 
+# Check for trust prompt and handle it
+echo "[Orchestrator] Checking for trust prompt..."
+for i in {1..5}; do
+    OUTPUT=$(tmux capture-pane -t "$SESSION_NAME" -p)
+    if echo "$OUTPUT" | grep -q "Do you trust"; then
+        echo "[Orchestrator] Trust prompt detected, approving..."
+        tmux send-keys -t "$SESSION_NAME" Enter
+        sleep 2
+        break
+    fi
+    sleep 1
+done
+
 # Step 4: Send prompt
 echo "[Orchestrator] Sending prompt..."
 tmux send-keys -t "$SESSION_NAME" "$PROMPT"
