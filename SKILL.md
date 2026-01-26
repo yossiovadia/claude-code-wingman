@@ -12,11 +12,38 @@ Automate Claude Code sessions from Clawdbot - leverage free/work Claude Code API
 
 ## What It Does
 
-Spawns Claude Code in tmux sessions with automatic approval of permission prompts. Perfect for when you have free/work Claude Code access but limited Anthropic API budget.
+Spawns Claude Code in tmux sessions with interactive approval via WhatsApp/chat. Perfect for when you have free/work Claude Code access but limited Anthropic API budget.
 
 **Cost Comparison:**
 - **Without:** Clawdbot does all coding → uses your $20/month API
 - **With:** Clawdbot spawns Claude Code → uses work's free API ✅
+
+## 🎯 Real-World Example
+
+**You (via WhatsApp):** "Check if my AWS server is still running"
+
+**Clawdbot spawns Claude Code** → work pays for API
+
+**Claude Code asks:** "Do you want me to SSH to the server?"
+
+**You get notified in WhatsApp:**
+```
+⚠️ Approval needed for session: aws-check
+
+Do you want to run SSH command?
+1. yes - Approve this once
+2. always - Approve for session
+3. no - Decline
+```
+
+**You respond:** "always"
+
+**Claude Code:**
+- ✅ Connects to server
+- ✅ Checks vLLM service status  
+- ✅ Reports: "Server healthy, API responding, 4 GPUs at 90%"
+
+**Result:** Complex task done for free, with full oversight via chat.
 
 ## Installation
 
