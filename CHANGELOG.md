@@ -9,7 +9,7 @@
   - Handles "Do you trust..." folder prompts
   - Uses arrow keys + Enter for TUI navigation
   
-- **Orchestrator script** - Complete automation wrapper
+- **Wingman script** - Complete automation wrapper
   - Spawns Claude Code in named tmux sessions
   - Starts auto-approver in background
   - Reliable prompt submission (double-tap Enter)

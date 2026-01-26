@@ -2,7 +2,7 @@
 
 **Your wingman for free coding** - dispatch tasks to Claude Code via tmux with WhatsApp approval, keeping your API budget for conversations.
 
-**GitHub:** https://github.com/yossiovadia/claude-code-orchestrator (will rename soon)
+**GitHub:** https://github.com/yossiovadia/claude-code-wingman
 
 ## Features
 
@@ -16,12 +16,12 @@
 ## Quick Install
 
 ```bash
-git clone https://github.com/yossiovadia/claude-code-orchestrator.git
-cd claude-code-orchestrator
+git clone https://github.com/yossiovadia/claude-code-wingman.git
+cd claude-code-wingman
 chmod +x *.sh
 
 # Test it
-./claude-orchestrate.sh --workdir ~/code/myproject --prompt "Your task"
+./claude-wingman.sh --workdir ~/code/myproject --prompt "Your task"
 ```
 
 **Requirements:** tmux, Claude Code CLI (`claude`), bash
@@ -34,7 +34,7 @@ chmod +x *.sh
 Automatically approves all permission prompts - perfect for trusted environments.
 
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --session my-task \
   --workdir ~/code/myproject \
   --prompt "Add error handling to api.py"
@@ -44,7 +44,7 @@ Automatically approves all permission prompts - perfect for trusted environments
 Asks you before each action - perfect when you want oversight.
 
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --session my-task \
   --workdir ~/code/myproject \
   --prompt "Add error handling to api.py" \
@@ -70,7 +70,7 @@ Then Clawdbot will notify you when approval is needed:
 
 ## Solution
 
-This orchestrator spawns Claude Code in tmux sessions with automatic (or interactive) approval of permission prompts. Uses work's free Claude Code API while keeping your Anthropic budget for conversations.
+This wingman spawns Claude Code in tmux sessions with automatic (or interactive) approval of permission prompts. Uses work's free Claude Code API while keeping your Anthropic budget for conversations.
 
 ---
 
@@ -107,8 +107,8 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and real-world test results
 
 ## Cost Savings
 
-- **Without orchestrator:** Clawdbot does everything → uses your $20/month API budget
-- **With orchestrator:** Clawdbot spawns Claude Code → uses work's free API ✅
+- **Without wingman:** Clawdbot does everything → uses your $20/month API budget
+- **With wingman:** Clawdbot spawns Claude Code → uses work's free API ✅
 
 Perfect for heavy coding tasks while keeping Clawdbot API costs minimal.
 
@@ -122,7 +122,7 @@ To publish to ClawdHub:
 ```bash
 npm i -g clawdhub
 clawdhub login
-clawdhub publish . --slug claude-code-orchestrator --name "Claude Code Orchestrator" --version 1.0.0
+clawdhub publish . --slug claude-code-wingman --name "Claude Code Wingman" --version 1.0.0
 ```
 
 ---

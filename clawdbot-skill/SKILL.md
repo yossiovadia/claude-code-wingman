@@ -1,14 +1,14 @@
 ---
-name: claude-code-orchestrator
-description: Orchestrate Claude Code sessions via tmux for free/work-paid coding while keeping Clawdbot API costs minimal
+name: claude-code-wingman
+description: Your Claude Code wingman - dispatch coding tasks via tmux for free/work-paid coding while keeping Clawdbot API costs minimal
 metadata: {"clawdbot":{"emoji":"🎯","requires":{"anyBins":["claude","tmux"]}}}
 ---
 
-# Claude Code Orchestrator
+# Claude Code Wingman
 
 Automate Claude Code sessions from Clawdbot - leverage free/work Claude Code API while keeping your Anthropic budget for conversations.
 
-**GitHub:** https://github.com/yossiovadia/claude-code-orchestrator
+**GitHub:** https://github.com/yossiovadia/claude-code-wingman
 
 ## What It Does
 
@@ -24,8 +24,8 @@ The skill references the standalone repo. Install it once:
 
 ```bash
 cd ~/code
-git clone https://github.com/yossiovadia/claude-code-orchestrator.git
-cd claude-code-orchestrator
+git clone https://github.com/yossiovadia/claude-code-wingman.git
+cd claude-code-wingman
 chmod +x *.sh
 ```
 
@@ -34,7 +34,7 @@ chmod +x *.sh
 When a user asks for coding work, spawn Claude Code:
 
 ```bash
-~/code/claude-code-orchestrator/claude-orchestrate.sh \
+~/code/claude-code-wingman/claude-wingman.sh \
   --session <session-name> \
   --workdir <project-directory> \
   --prompt "<task description>"
@@ -48,7 +48,7 @@ When a user asks for coding work, spawn Claude Code:
 ```
 Spawning Claude Code for this...
 
-bash:~/code/claude-code-orchestrator/claude-orchestrate.sh \
+bash:~/code/claude-code-wingman/claude-wingman.sh \
   --session vsr-bug-fix \
   --workdir ~/code/semantic-router \
   --prompt "Fix the bug in src/api.py - add proper error handling for null responses"
@@ -70,7 +70,7 @@ tmux capture-pane -t vsr-bug-fix -p -S -50
 
 ### Spawn Session
 ```bash
-~/code/claude-code-orchestrator/claude-orchestrate.sh \
+~/code/claude-code-wingman/claude-wingman.sh \
   --session <name> \
   --workdir <dir> \
   --prompt "<task>"
@@ -99,7 +99,7 @@ tmux ls | grep claude-auto
 ## Workflow
 
 1. **User requests coding work** (fix bug, add feature, refactor, etc.)
-2. **Clawdbot spawns Claude Code** via orchestrator script
+2. **Clawdbot spawns Claude Code** via wingman script
 3. **Auto-approver handles permissions** in background
 4. **Clawdbot monitors and reports** progress
 5. **User can attach anytime** to see/control directly
@@ -122,15 +122,15 @@ Press Enter to approve, then Ctrl+B followed by D to detach.
 
 ## Best Practices
 
-### When to Use Orchestrator
+### When to Use Wingman
 
-✅ **Use orchestrator for:**
+✅ **Use wingman for:**
 - Heavy code generation/refactoring
 - Multi-file changes
 - Long-running tasks
 - Repetitive coding work
 
-❌ **Don't use orchestrator for:**
+❌ **Don't use wingman for:**
 - Quick file reads
 - Simple edits
 - When conversation is needed
@@ -146,7 +146,7 @@ Use descriptive names:
 ## Troubleshooting
 
 ### Prompt Not Submitting
-The orchestrator sends Enter twice with delays. If stuck, user can attach and press Enter manually.
+The wingman sends Enter twice with delays. If stuck, user can attach and press Enter manually.
 
 ### Auto-Approver Not Working
 Check logs: `cat /tmp/auto-approver-<session-name>.log`

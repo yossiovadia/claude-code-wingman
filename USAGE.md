@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --workdir ~/code/myproject \
   --prompt "Your task for Claude Code"
 ```
@@ -12,14 +12,14 @@
 
 ### Simple Task
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --workdir ~/code/test-project \
   --prompt "Create a hello.py file that prints 'Hello World'"
 ```
 
 ### Named Session
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --session my-task-123 \
   --workdir ~/code/semantic-router \
   --prompt "Add error handling to the API calls in src/api.py"
@@ -27,7 +27,7 @@
 
 ### Monitor Progress
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --workdir ~/code/myproject \
   --prompt "Fix the bug in line 42" \
   --monitor
@@ -35,7 +35,7 @@
 
 ### Wait for Completion
 ```bash
-./claude-orchestrate.sh \
+./claude-wingman.sh \
   --workdir ~/code/myproject \
   --prompt "Run tests and fix any failures" \
   --wait
@@ -89,15 +89,15 @@ tmux ls
 
 ## Cost Savings
 
-- **Without orchestrator:** Clawdbot does everything → uses your $20/month API budget
-- **With orchestrator:** Clawdbot spawns Claude Code → uses work's free API ✅
+- **Without wingman:** Clawdbot does everything → uses your $20/month API budget
+- **With wingman:** Clawdbot spawns Claude Code → uses work's free API ✅
 
 Perfect for heavy coding tasks while keeping Clawdbot API costs minimal.
 
 ## Troubleshooting
 
 ### Prompt Doesn't Submit
-- The orchestrator sends Enter twice with delays
+- The wingman sends Enter twice with delays
 - If still stuck, attach and press Enter manually: `tmux attach -t <session-name>`
 
 ### Auto-Approver Not Working

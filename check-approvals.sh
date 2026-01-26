@@ -21,5 +21,5 @@ for PENDING in "$APPROVAL_DIR"/*.pending; do
     echo ""
     cat "$PENDING"
     echo ""
-    echo "Respond with: ~/code/claude-code-orchestrator/respond-approval.sh $SESSION <yes|always|no>"
+    echo "Respond with: ~/code/claude-code-wingman/respond-approval.sh $SESSION <yes|always|no>"
 done
