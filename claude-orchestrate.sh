@@ -30,7 +30,7 @@ usage() {
 SESSION_NAME=""
 WORKDIR="$(pwd)"
 PROMPT=""
-MODEL="opus"
+MODEL=""  # Empty = use Claude Code's default
 MONITOR=false
 WAIT=false
 
@@ -108,7 +108,11 @@ echo "[Orchestrator] Auto-approver running (PID: $AUTO_APPROVER_PID)"
 
 # Step 3: Start Claude Code
 echo "[Orchestrator] Launching Claude Code..."
-tmux send-keys -t "$SESSION_NAME" "claude --model $MODEL" C-m
+if [ -n "$MODEL" ]; then
+    tmux send-keys -t "$SESSION_NAME" "claude --model $MODEL" C-m
+else
+    tmux send-keys -t "$SESSION_NAME" "claude" C-m
+fi
 
 # Wait for Claude Code to initialize
 echo "[Orchestrator] Waiting for Claude Code to initialize..."
