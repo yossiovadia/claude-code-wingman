@@ -20,10 +20,10 @@ while true; do
         exit 0
     fi
     
-    # Look for approval prompt
-    if echo "$OUTPUT" | grep -q "Do you want to proceed?"; then
+    # Look for approval prompt (any "Do you want..." question)
+    if echo "$OUTPUT" | grep -q "Do you want"; then
         echo "[Auto-Approver] Approval prompt detected! Navigating to option 2 and confirming..."
-        # Option 2 is "Yes, and always allow access to X from this project"
+        # Option 2 is typically "Yes, and allow for session/project"
         # Navigate down one option (from 1 to 2) and press Enter
         tmux send-keys -t "$SESSION_NAME" Down Enter
         sleep 2  # Give it time to process
