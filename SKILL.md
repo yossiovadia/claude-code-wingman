@@ -1,12 +1,12 @@
 ---
-name: claude-code-orchestrator
-description: Orchestrate Claude Code sessions via tmux for free/work-paid coding while keeping Clawdbot API costs minimal
-metadata: {"clawdbot":{"emoji":"🎯","requires":{"anyBins":["claude","tmux"]}}}
+name: claude-code-wingman
+description: Your Claude Code wingman - dispatch coding tasks to free/work Claude Code with WhatsApp approval, keeping your API budget for conversations
+metadata: {"clawdbot":{"emoji":"🦅","requires":{"anyBins":["claude","tmux"]}}}
 ---
 
-# Claude Code Orchestrator
+# Claude Code Wingman
 
-Automate Claude Code sessions from Clawdbot - leverage free/work Claude Code API while keeping your Anthropic budget for conversations.
+Your wingman for free coding - dispatch tasks to Claude Code (on your work's dime) with full approval control via WhatsApp.
 
 **GitHub:** https://github.com/yossiovadia/claude-code-orchestrator
 

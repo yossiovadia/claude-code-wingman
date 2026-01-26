@@ -1,8 +1,8 @@
-# Claude Code Orchestrator
+# Claude Code Wingman 🦅
 
-**Orchestrate Claude Code sessions from Clawdbot via tmux** - leverage free/work Claude Code while keeping API costs minimal.
+**Your wingman for free coding** - dispatch tasks to Claude Code via tmux with WhatsApp approval, keeping your API budget for conversations.
 
-**GitHub:** https://github.com/yossiovadia/claude-code-orchestrator
+**GitHub:** https://github.com/yossiovadia/claude-code-orchestrator (will rename soon)
 
 ## Features
 
