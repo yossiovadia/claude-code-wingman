@@ -35,4 +35,25 @@ Can Claude Code be configured to auto-approve commands without interactive promp
 
 ## Findings
 
-*(Will document as we test)*
+### Test 1: CLAUDE.md for Auto-Approval ❌
+
+**Tested:** Created `test-project/CLAUDE.md` with instructions to auto-approve commands
+
+**Result:** FAILED - Claude Code still shows approval prompt:
+```
+Do you want to proceed?
+❯ 1. Yes
+  2. Yes, and always allow access to test-project/ from this project
+  3. No
+```
+
+**Conclusion:** CLAUDE.md is for giving Claude Code context/instructions, NOT for disabling security prompts.
+
+---
+
+### Next: Programmatic Approval Detection
+
+Since we can't disable prompts via config, we need to:
+1. Detect approval prompts in tmux output
+2. Auto-send "2" (approve for this project)
+3. Build this into the wrapper
