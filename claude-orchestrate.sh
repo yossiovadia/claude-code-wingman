@@ -16,7 +16,6 @@ usage() {
     echo "  --session <name>      Session name (default: auto-generated)"
     echo "  --workdir <path>      Working directory (default: current dir)"
     echo "  --prompt <text>       Prompt to send to Claude Code"
-    echo "  --model <model>       Model to use (default: opus)"
     echo "  --monitor             Monitor session in real-time (blocks)"
     echo "  --wait                Wait for completion"
     echo ""
@@ -30,7 +29,6 @@ usage() {
 SESSION_NAME=""
 WORKDIR="$(pwd)"
 PROMPT=""
-MODEL=""  # Empty = use Claude Code's default
 MONITOR=false
 WAIT=false
 
@@ -46,10 +44,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --prompt)
             PROMPT="$2"
-            shift 2
-            ;;
-        --model)
-            MODEL="$2"
             shift 2
             ;;
         --monitor)
@@ -86,9 +80,14 @@ if [ -z "$SESSION_NAME" ]; then
     SESSION_NAME="${SESSION_PREFIX}-$(date +%s)"
 fi
 
+# Validate session name (alphanumeric, underscore, hyphen only)
+if [[ ! "$SESSION_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "Error: Invalid session name. Use only alphanumeric characters, underscores, and hyphens."
+    exit 1
+fi
+
 echo "[Orchestrator] Starting Claude Code session: $SESSION_NAME"
 echo "[Orchestrator] Working directory: $WORKDIR"
-echo "[Orchestrator] Model: $MODEL"
 echo "[Orchestrator] Prompt: $PROMPT"
 echo ""
 
@@ -102,17 +101,14 @@ tmux new-session -d -s "$SESSION_NAME" -c "$WORKDIR"
 # Step 2: Start auto-approver in background
 echo "[Orchestrator] Starting auto-approver..."
 LOG_FILE="/tmp/auto-approver-${SESSION_NAME}.log"
+touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
 "$AUTO_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
 AUTO_APPROVER_PID=$!
 echo "[Orchestrator] Auto-approver running (PID: $AUTO_APPROVER_PID)"
 
 # Step 3: Start Claude Code
 echo "[Orchestrator] Launching Claude Code..."
-if [ -n "$MODEL" ]; then
-    tmux send-keys -t "$SESSION_NAME" "claude --model $MODEL" C-m
-else
-    tmux send-keys -t "$SESSION_NAME" "claude" C-m
-fi
+tmux send-keys -t "$SESSION_NAME" "claude" C-m
 
 # Wait for Claude Code to initialize
 echo "[Orchestrator] Waiting for Claude Code to initialize..."

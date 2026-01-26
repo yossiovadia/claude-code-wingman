@@ -48,7 +48,6 @@
 | `--prompt <text>` | Task for Claude Code | ✅ Yes |
 | `--workdir <path>` | Working directory | No (default: current dir) |
 | `--session <name>` | Session name | No (auto-generated) |
-| `--model <model>` | Model to use | No (uses Claude Code default) |
 | `--monitor` | Monitor in real-time | No |
 | `--wait` | Wait for completion | No |
 
@@ -106,8 +105,8 @@ Perfect for heavy coding tasks while keeping Clawdbot API costs minimal.
 - Look for "Approval prompt detected!" messages
 
 ### Claude Code Shows API Error
-- Check if your work account has access to the model
-- Try without `--model` flag to use default
+- Check if your work account has access to Claude Code
+- Verify `claude` CLI is properly authenticated
 
 ### Session Already Exists
 - Kill it first: `tmux kill-session -t <session-name>`

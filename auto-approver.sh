@@ -1,6 +1,8 @@
 #!/bin/bash
 # Auto-Approver: Monitors tmux session and auto-approves Claude Code prompts
 
+set -uo pipefail
+
 SESSION_NAME="$1"
 
 if [ -z "$SESSION_NAME" ]; then
