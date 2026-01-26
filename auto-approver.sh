@@ -20,8 +20,14 @@ while true; do
         exit 0
     fi
     
+    # Look for "Do you trust..." prompt (folder trust)
+    if echo "$OUTPUT" | grep -q "Do you trust"; then
+        echo "[Auto-Approver] Trust prompt detected! Approving folder trust..."
+        # Just press Enter to confirm option 1 (Yes, proceed)
+        tmux send-keys -t "$SESSION_NAME" Enter
+        sleep 2
     # Look for approval prompt (any "Do you want..." question)
-    if echo "$OUTPUT" | grep -q "Do you want"; then
+    elif echo "$OUTPUT" | grep -q "Do you want"; then
         echo "[Auto-Approver] Approval prompt detected! Navigating to option 2 and confirming..."
         # Option 2 is typically "Yes, and allow for session/project"
         # Navigate down one option (from 1 to 2) and press Enter
