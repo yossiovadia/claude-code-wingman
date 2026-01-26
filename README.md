@@ -1,6 +1,21 @@
 # Claude Code Orchestrator
 
-**Goal:** Orchestrate Claude Code sessions from Clawdbot via tmux, enabling free/work-paid Claude Code usage while keeping Clawdbot API costs minimal.
+**Orchestrate Claude Code sessions from Clawdbot via tmux** - leverage free/work Claude Code while keeping API costs minimal.
+
+**GitHub:** https://github.com/yossiovadia/claude-code-orchestrator
+
+## Quick Install
+
+```bash
+git clone https://github.com/yossiovadia/claude-code-orchestrator.git
+cd claude-code-orchestrator
+chmod +x *.sh
+
+# Test it
+./claude-orchestrate.sh --workdir ~/code/myproject --prompt "Your task"
+```
+
+**Requirements:** tmux, Claude Code CLI (`claude`), bash
 
 ## Problem Statement
 
