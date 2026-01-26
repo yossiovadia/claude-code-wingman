@@ -3,6 +3,26 @@
 
 set -e
 
+# Check dependencies
+if ! command -v tmux &> /dev/null; then
+    echo "Error: tmux is not installed."
+    echo ""
+    echo "Install tmux:"
+    echo "  macOS:   brew install tmux"
+    echo "  Ubuntu:  sudo apt-get install tmux"
+    echo "  Fedora:  sudo dnf install tmux"
+    echo ""
+    exit 1
+fi
+
+if ! command -v claude &> /dev/null; then
+    echo "Error: Claude Code CLI is not installed."
+    echo ""
+    echo "Get Claude Code from: https://claude.ai/code"
+    echo ""
+    exit 1
+fi
+
 # Configuration
 SESSION_PREFIX="claude-auto"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,6 +38,7 @@ usage() {
     echo "  --prompt <text>       Prompt to send to Claude Code"
     echo "  --monitor             Monitor session in real-time (blocks)"
     echo "  --wait                Wait for completion"
+    echo "  --interactive         Ask user for approval on each prompt (via pending file)"
     echo ""
     echo "Examples:"
     echo "  $0 --workdir ~/code/myproject --prompt 'Add error handling to api.py'"
@@ -31,6 +52,7 @@ WORKDIR="$(pwd)"
 PROMPT=""
 MONITOR=false
 WAIT=false
+INTERACTIVE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -52,6 +74,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --wait)
             WAIT=true
+            shift
+            ;;
+        --interactive)
+            INTERACTIVE=true
             shift
             ;;
         -h|--help)
@@ -98,13 +124,24 @@ tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 echo "[Orchestrator] Creating tmux session..."
 tmux new-session -d -s "$SESSION_NAME" -c "$WORKDIR"
 
-# Step 2: Start auto-approver in background
-echo "[Orchestrator] Starting auto-approver..."
-LOG_FILE="/tmp/auto-approver-${SESSION_NAME}.log"
-touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
-"$AUTO_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
-AUTO_APPROVER_PID=$!
-echo "[Orchestrator] Auto-approver running (PID: $AUTO_APPROVER_PID)"
+# Step 2: Start approver in background
+if [ "$INTERACTIVE" = true ]; then
+    echo "[Orchestrator] Starting interactive approver..."
+    LOG_FILE="/tmp/interactive-approver-${SESSION_NAME}.log"
+    INTERACTIVE_APPROVER="$SCRIPT_DIR/interactive-approver.sh"
+    touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
+    "$INTERACTIVE_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
+    APPROVER_PID=$!
+    echo "[Orchestrator] Interactive approver running (PID: $APPROVER_PID)"
+    echo "[Orchestrator] You'll be notified when approval is needed"
+else
+    echo "[Orchestrator] Starting auto-approver..."
+    LOG_FILE="/tmp/auto-approver-${SESSION_NAME}.log"
+    touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
+    "$AUTO_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
+    APPROVER_PID=$!
+    echo "[Orchestrator] Auto-approver running (PID: $APPROVER_PID)"
+fi
 
 # Step 3: Start Claude Code
 echo "[Orchestrator] Launching Claude Code..."
