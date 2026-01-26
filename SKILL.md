@@ -1,7 +1,14 @@
 ---
 name: claude-code-wingman
+version: 0.1.0
 description: Your Claude Code wingman - dispatch coding tasks to free/work Claude Code with WhatsApp approval, keeping your API budget for conversations
-metadata: {"clawdbot":{"emoji":"🦅","requires":{"anyBins":["claude","tmux"]}}}
+metadata:
+  clawdbot:
+    emoji: "🦅"
+    requires:
+      anyBins:
+        - claude
+        - tmux
 ---
 
 # Claude Code Wingman

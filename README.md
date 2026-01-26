@@ -1,37 +1,37 @@
 # Claude Code Wingman 🦅
 
-**Your wingman for free coding** - dispatch tasks to Claude Code via tmux with WhatsApp approval, keeping your API budget for conversations.
+Run Claude Code as a Clawdbot skill. Control it from WhatsApp, track progress, and approve actions - all without leaving your chat.
 
 **GitHub:** https://github.com/yossiovadia/claude-code-wingman
 
-## Features
+## What It Does
 
-✅ Auto-approval mode - runs completely hands-off  
-✅ Interactive mode - asks you before each action (via WhatsApp/Clawdbot)  
-✅ tmux session management - attach anytime to see/control  
-✅ Dependency checks - validates tmux + claude CLI are installed  
-✅ Security - validates session names, secures log files  
-✅ Real-world tested - used for production VSR work  
+Clawdbot spawns Claude Code in a tmux session. When Claude Code needs permission to do something, **you get notified via WhatsApp** (or Clawdbot dashboard) and can approve or deny.
 
-## Quick Install
+- **Give tasks via chat:** "Fix the bug in api.py"
+- **Get approval requests:** "Claude Code wants to edit 3 files. Allow?"
+- **Track progress:** Ask "what's the status?" anytime
+- **Take over:** Attach to the tmux session to see or control Claude Code directly
+
+## Why Use This?
+
+| Without Wingman | With Wingman |
+|-----------------|--------------|
+| Clawdbot does all coding | Clawdbot dispatches to Claude Code |
+| Uses your $20/month API budget | Uses work's free Claude Code API |
+| Limited to chat interface | Full Claude Code power + chat control |
+
+## Quick Start
 
 ```bash
 git clone https://github.com/yossiovadia/claude-code-wingman.git
 cd claude-code-wingman
 chmod +x *.sh
-
-# Test it
-./claude-wingman.sh --workdir ~/code/myproject --prompt "Your task"
 ```
 
 **Requirements:** tmux, Claude Code CLI (`claude`), bash
 
----
-
-## Two Modes
-
-### Auto Mode (Default)
-Automatically approves all permission prompts - perfect for trusted environments.
+## Usage
 
 ```bash
 ./claude-wingman.sh \
@@ -40,98 +40,46 @@ Automatically approves all permission prompts - perfect for trusted environments
   --prompt "Add error handling to api.py"
 ```
 
-### Interactive Mode
-Asks you before each action - perfect when you want oversight.
-
+When Claude Code asks for permission, you'll be notified. Respond with:
 ```bash
-./claude-wingman.sh \
-  --session my-task \
-  --workdir ~/code/myproject \
-  --prompt "Add error handling to api.py" \
-  --interactive
+./respond-approval.sh my-task yes      # approve once
+./respond-approval.sh my-task always   # approve for session
+./respond-approval.sh my-task no       # deny
 ```
 
-Then Clawdbot will notify you when approval is needed:
-```bash
-# Check for pending approvals
-./check-approvals.sh
+### Attach to Session
 
-# Respond
-./respond-approval.sh my-task always
+Want to see what Claude Code is doing? Attach to the tmux session:
+```bash
+tmux attach -t my-task
 ```
 
----
+Detach with `Ctrl+B` then `D`. The session keeps running.
 
-## Problem Statement
+### Auto Mode
 
-- **Clawdbot** uses your Anthropic API ($20/month budget)
-- **Claude Code** (via work/free tier) doesn't cost you anything
-- Want to leverage free Claude Code for heavy lifting while using Clawdbot for coordination
+For trusted environments, skip the approval prompts:
+```bash
+./claude-wingman.sh --workdir ~/code/myproject --prompt "Run tests" --auto
+```
 
-## Solution
+## Commands
 
-This wingman spawns Claude Code in tmux sessions with automatic (or interactive) approval of permission prompts. Uses work's free Claude Code API while keeping your Anthropic budget for conversations.
+| Command | Description |
+|---------|-------------|
+| `tmux attach -t <session>` | Watch/control Claude Code live |
+| `tmux capture-pane -t <session> -p` | Get current output |
+| `./check-approvals.sh` | See pending approval requests |
+| `tmux kill-session -t <session>` | Stop a session |
 
----
+## More Docs
 
-## Development Plan
-
-### Phase 1: Research & Testing ✅ COMPLETE!
-- [x] Step 1: Research Claude Code auto-approval settings
-- [x] Step 2: Build minimal wrapper script (auto-approver.sh)
-- [x] Step 3: Test with simple task ✅ SUCCESS
-
-**Result:** Full end-to-end automation achieved! test5.txt created with zero human intervention.
-
-### Phase 2: Production Features ✅ COMPLETE!
-- [x] Interactive approval mode
-- [x] Dependency checks
-- [x] Security improvements (validation, secure logs)
-- [x] Multiple test cases
-
-### Phase 3: Release ✅ COMPLETE!
-- [x] Published to GitHub
-- [x] Clawdbot skill documentation
-- [x] Usage guide
-- [x] Changelog
-
----
-
-## Usage
-
-See [USAGE.md](USAGE.md) for detailed examples and troubleshooting.
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and real-world test results.
-
----
-
-## Cost Savings
-
-- **Without wingman:** Clawdbot does everything → uses your $20/month API budget
-- **With wingman:** Clawdbot spawns Claude Code → uses work's free API ✅
-
-Perfect for heavy coding tasks while keeping Clawdbot API costs minimal.
-
----
+- [USAGE.md](USAGE.md) - Detailed examples
+- [CHANGELOG.md](CHANGELOG.md) - Version history
 
 ## Contributing
 
-This project is open source and ready for contributions. Bash scripts are welcome and encouraged!
-
-To publish to ClawdHub:
+PRs welcome! To publish updates to ClawdHub:
 ```bash
-npm i -g clawdhub
-clawdhub login
-clawdhub publish . --slug claude-code-wingman --name "Claude Code Wingman" --version 1.0.0
+clawdhub publish . --slug claude-code-wingman --name "Claude Code Wingman" --version X.Y.Z
 ```
-
----
-
-## Contributors
-
-- **Yossi Ovadia** ([@yossiovadia](https://github.com/yossiovadia)) - Product vision, testing, VSR use case
-- **The Dude** (Clawdbot Agent) - Implementation, debugging, documentation
-
----
-
-*Built in one day. From idea to working prototype to published project. This could help others with the same problem.* 🎳✨
