@@ -10,6 +10,36 @@ Your multi-session orchestrator - manage multiple Claude Code instances working 
 
 **GitHub:** https://github.com/yossiovadia/claude-code-orchestrator
 
+## ⚡ CRITICAL: Handle Approval Commands First
+
+**When a user message matches these patterns, IMMEDIATELY run the corresponding command:**
+
+| User Message Pattern | Command to Run |
+|---------------------|----------------|
+| `approve <session>` | `~/code/claude-code-orchestrator/lib/handle-approval.sh approve <session>` |
+| `always <session>` | `~/code/claude-code-orchestrator/lib/handle-approval.sh always <session>` |
+| `deny <session>` | `~/code/claude-code-orchestrator/lib/handle-approval.sh deny <session>` |
+
+**Examples:**
+- User: "approve vsr-bugfix" → Run: `~/code/claude-code-orchestrator/lib/handle-approval.sh approve vsr-bugfix`
+- User: "always heartbeat-test" → Run: `~/code/claude-code-orchestrator/lib/handle-approval.sh always heartbeat-test`
+- User: "deny proxy-refactor" → Run: `~/code/claude-code-orchestrator/lib/handle-approval.sh deny proxy-refactor`
+
+**After running, respond with the command output** (e.g., "✓ Session 'vsr-bugfix' approved (once)")
+
+**Why this is critical:** The master monitor daemon sends WhatsApp notifications when Claude Code sessions need approval. The user responds with these commands from their phone. Fast response = unblocked sessions.
+
+### Quick Status Commands
+
+| User Message | Command to Run |
+|--------------|----------------|
+| `sessions` or `status` | `~/code/claude-code-orchestrator/lib/session-status.sh --all --json` |
+| `status <session>` | `~/code/claude-code-orchestrator/lib/session-status.sh <session> --json` |
+
+Parse the JSON and respond with a human-readable summary.
+
+---
+
 ## What It Does
 
 Orchestrates multiple Claude Code sessions in parallel, each working on different tasks in different directories. You monitor and control everything remotely via WhatsApp/chat.
@@ -18,18 +48,14 @@ Orchestrates multiple Claude Code sessions in parallel, each working on differen
 - **Multiple tmux sessions** running simultaneously
 - **Each session = one Claude Code instance** in its own directory
 - **Different tasks** happening in parallel (VSR fixes, Clawdbot features, proxy refactoring)
-- **You orchestrate everything** via The Dude (this assistant) from WhatsApp
+- **You orchestrate everything** via Clawdbot (this assistant) from WhatsApp
 - **Real-time dashboard** showing all active sessions and their status
-
-**Cost Comparison:**
-- **Without:** Clawdbot does all coding → uses your $20/month API
-- **With:** Clawdbot orchestrates multiple Claude Code sessions → uses work's free API ✅
 
 ## 🎯 Real-World Example: Multi-Session Orchestration
 
 **Morning - You (via WhatsApp):** "Start work on VSR issue #1131, Clawdbot authentication feature, and refactor the proxy"
 
-**The Dude spawns 3 sessions:**
+**Clawdbot spawns 3 sessions:**
 ```
 ✅ Session: vsr-issue-1131     (~/code/semantic-router)
 ✅ Session: clawdbot-auth      (~/code/clawdbot)
@@ -38,48 +64,52 @@ Orchestrates multiple Claude Code sessions in parallel, each working on differen
 
 **During lunch - You:** "Show me the dashboard"
 
-**The Dude:**
+**Clawdbot:**
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Active Claude Code Sessions                             │
 ├─────────────────┬──────────────────────┬────────────────┤
 │ vsr-issue-1131  │ semantic-router      │ ✅ Working     │
 │ clawdbot-auth   │ clawdbot             │ ✅ Working     │
-│ proxy-refactor  │ claude-code-proxy    │ ⏸️  Idle       │
+│ proxy-refactor  │ claude-code-proxy    │ ⏳ Waiting approval │
 └─────────────────┴──────────────────────┴────────────────┘
 ```
 
 **You:** "How's the VSR issue going?"
 
-**The Dude captures session output:**
+**Clawdbot captures session output:**
 "Almost done - fixed the schema validation bug, running tests now. 8/10 tests passing."
 
 **You:** "Tell proxy-refactor to run tests next"
 
-**The Dude sends command** to that specific session.
+**Clawdbot sends command** to that specific session.
 
-**Result:** 3 parallel tasks, full remote control, zero API cost to you. 🎯
+**Result:** 3 parallel tasks, full remote control from your phone. 🎯
 
 ## Installation
 
-The wingman orchestrator lives in `~/code/claude-code-orchestrator/`:
+### Via Clawdbot (Recommended)
 
-**Main script:** `claude-wingman.sh`
-**Directory name:** Still `claude-code-orchestrator` (historical)
-**Skill name:** `claude-code-wingman` (updated)
+```bash
+clawdbot skill install claude-code-wingman
+```
 
-If installing fresh:
+Or visit: https://clawdhub.com/skills/claude-code-wingman
+
+### Manual Installation
+
 ```bash
 cd ~/code
 git clone https://github.com/yossiovadia/claude-code-orchestrator.git
 cd claude-code-orchestrator
-chmod +x *.sh
+chmod +x *.sh lib/*.sh
 ```
 
-**Important:** Always reference the full path:
-```bash
-~/code/claude-code-orchestrator/claude-wingman.sh
-```
+### Requirements
+
+- `claude` CLI (Claude Code)
+- `tmux` (terminal multiplexer)
+- `jq` (JSON processor)
 
 ## Core Philosophy: Always Use the Wingman Script
 
@@ -151,7 +181,7 @@ Parse the output to determine if Claude Code is:
 
 **User:** "Fix the bug in api.py"
 
-**The Dude:**
+**Clawdbot:**
 ```
 Spawning Claude Code session for this...
 
@@ -164,7 +194,7 @@ Spawning Claude Code session for this...
 
 **User:** "What's the status?"
 
-**The Dude:**
+**Clawdbot:**
 ```bash
 tmux capture-pane -t vsr-bug-fix -p -S -50
 ```
@@ -173,7 +203,7 @@ Then summarize: "Claude Code is running tests now, 8/10 passing"
 
 **User:** "Tell it to commit the changes"
 
-**The Dude:**
+**Clawdbot:**
 ```bash
 ~/code/claude-code-orchestrator/claude-wingman.sh \
   --session vsr-bug-fix \
@@ -245,11 +275,11 @@ Shows all active Claude Code sessions:
 │ Session         │ Directory            │ Status         │
 ├─────────────────┼──────────────────────┼────────────────┤
 │ vsr-issue-1131  │ ~/code/semantic-...  │ ✅ Working     │
-│ clawdbot-feat   │ ~/code/clawdbot      │ ⏸️  Idle       │
+│ clawdbot-feat   │ ~/code/clawdbot      │ ⏳ Waiting approval │
 │ proxy-refactor  │ ~/code/claude-co...  │ ❌ Error       │
 └─────────────────┴──────────────────────┴────────────────┘
 
-Total: 3 sessions | Working: 1 | Idle: 1 | Error: 1
+Total: 3 sessions | Working: 1 | Waiting: 1 | Error: 1
 ```
 
 ### `wingman status <session>`
@@ -278,7 +308,7 @@ Progress: 8/10 tests passing
 3. **Auto-approver handles permissions** in background
 4. **Clawdbot monitors and reports** progress
 5. **User can attach anytime** to see/control directly
-6. **Claude Code does the work** on work's API ✅
+6. **Claude Code does the work** autonomously ✅
 
 ## Trust Prompt (First Time Only)
 
@@ -350,4 +380,67 @@ After successful tasks, update `TOOLS.md`:
 
 ---
 
-**Remember:** This skill saves API costs by using free work Claude Code for heavy lifting, keeping your Anthropic budget for conversations.
+## 🔔 Approval Handling (WhatsApp Integration)
+
+The master monitor daemon sends WhatsApp notifications when sessions need approval. Handle them with these commands:
+
+### Approve Commands (from WhatsApp)
+
+When you receive an approval notification, respond with:
+
+**Clawdbot parses your message and runs:**
+```bash
+# Approve once
+~/code/claude-code-orchestrator/lib/handle-approval.sh approve <session-name>
+
+# Approve all similar (always)
+~/code/claude-code-orchestrator/lib/handle-approval.sh always <session-name>
+
+# Deny
+~/code/claude-code-orchestrator/lib/handle-approval.sh deny <session-name>
+```
+
+### Example WhatsApp Flow
+
+**Notification received:**
+```
+🔒 Session 'vsr-bugfix' needs approval
+
+Bash(rm -rf ./build && npm run build)
+
+Reply with:
+• approve vsr-bugfix - Allow once
+• always vsr-bugfix - Allow all similar
+• deny vsr-bugfix - Reject
+```
+
+**You reply:** "approve vsr-bugfix"
+
+**Clawdbot:**
+```bash
+~/code/claude-code-orchestrator/lib/handle-approval.sh approve vsr-bugfix
+```
+
+**Response:** "✓ Session 'vsr-bugfix' approved (once)"
+
+### Start the Monitor Daemon
+
+```bash
+# Start monitoring all sessions (reads config from ~/.clawdbot/clawdbot.json)
+~/code/claude-code-orchestrator/master-monitor.sh &
+
+# With custom intervals
+~/code/claude-code-orchestrator/master-monitor.sh --poll-interval 5 --reminder-interval 120 &
+
+# Check if running
+cat /tmp/claude-orchestrator/master-monitor.pid
+
+# View logs
+tail -f /tmp/claude-orchestrator/master-monitor.log
+
+# Stop the daemon
+kill $(cat /tmp/claude-orchestrator/master-monitor.pid)
+```
+
+No environment variables needed - phone and webhook token are read from Clawdbot config.
+
