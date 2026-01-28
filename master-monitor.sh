@@ -160,14 +160,39 @@ extract_approval_details() {
 
     local details=""
 
-    # Look for the approval prompt line first - it tells us what's being requested
-    local approval_line
-    approval_line=$(echo "$output" | grep -E "Do you want to" | tail -1)
+    # Look for the approval prompt line to find where the prompt starts
+    local approval_line_num
+    approval_line_num=$(echo "$output" | grep -n -E "Do you want" | tail -1 | cut -d: -f1)
 
-    if [ -n "$approval_line" ]; then
-        # The approval line itself tells us what's happening
-        details="$approval_line"
-    else
+    if [ -n "$approval_line_num" ]; then
+        # Get a few lines BEFORE the "Do you want" line - that's where the command is
+        # The format is usually:
+        #   Bash command
+        #   <the actual command>
+        #   <description>
+        #   Do you want to proceed?
+        local start_line=$((approval_line_num - 5))
+        [ "$start_line" -lt 1 ] && start_line=1
+
+        # Extract lines around the prompt
+        local context
+        context=$(echo "$output" | sed -n "${start_line},${approval_line_num}p" | grep -v "^$" | grep -v "^─" | grep -v "^╌")
+
+        # Look for the actual command in the context
+        # Try to find Bash/Write/Edit/Read/Fetch command
+        if echo "$context" | grep -qE "^\s*(Bash|Write|Edit|Read|Fetch)"; then
+            details=$(echo "$context" | grep -E "^\s*(Bash|Write|Edit|Read|Fetch)" | head -1 | sed 's/^[[:space:]]*//')
+        elif echo "$context" | grep -qE "echo|rm |cat |mkdir|chmod|curl|wget|git "; then
+            # Raw command line
+            details=$(echo "$context" | grep -E "echo|rm |cat |mkdir|chmod|curl|wget|git " | head -1 | sed 's/^[[:space:]]*//')
+        else
+            # Just use the first non-empty content line
+            details=$(echo "$context" | head -3 | tr '\n' ' ' | sed 's/^[[:space:]]*//')
+        fi
+    fi
+
+    # Fallback: find the last tool call that appears AFTER any "Done." line
+    if [ -z "$details" ]; then
         # Fallback: find the last tool call that appears AFTER any "Done." line
         # This ensures we get the pending one, not a completed one
         local last_done_line
