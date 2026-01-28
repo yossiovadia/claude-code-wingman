@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { execSync, spawn } = require('child_process');
+const { execSync } = require('child_process');
 const path = require('path');
 
 const app = express();
@@ -126,32 +126,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[*] Client disconnected: ${socket.id}`);
-  });
-
-  // Handle input from client
-  socket.on('session:input', (data) => {
-    const { name, input } = data;
-    console.log(`[>] Input to ${name}: ${JSON.stringify(input)}`);
-    try {
-      // Send keys to tmux session
-      if (input === 'Enter') {
-        execSync(`tmux send-keys -t "${name}" Enter`, { timeout: 5000 });
-      } else if (input === 'ArrowUp') {
-        execSync(`tmux send-keys -t "${name}" Up`, { timeout: 5000 });
-      } else if (input === 'ArrowDown') {
-        execSync(`tmux send-keys -t "${name}" Down`, { timeout: 5000 });
-      } else if (input === 'Escape') {
-        execSync(`tmux send-keys -t "${name}" Escape`, { timeout: 5000 });
-      } else if (input === 'Backspace') {
-        execSync(`tmux send-keys -t "${name}" BSpace`, { timeout: 5000 });
-      } else if (input.length === 1) {
-        // Single character - escape special chars for tmux
-        const escaped = input.replace(/'/g, "'\\''");
-        execSync(`tmux send-keys -t "${name}" '${escaped}'`, { timeout: 5000 });
-      }
-    } catch (err) {
-      console.error(`[!] Failed to send input to ${name}:`, err.message);
-    }
   });
 
   // Handle quick approval actions

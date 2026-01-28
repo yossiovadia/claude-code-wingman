@@ -173,34 +173,6 @@
       transform: translateY(-2px);
     }
 
-    .terminal-card.focused {
-      border-color: var(--accent-magenta);
-      box-shadow: 0 0 40px rgba(255, 0, 170, 0.4);
-    }
-
-    .terminal-card.focused .terminal-header {
-      background: linear-gradient(90deg, rgba(255, 0, 170, 0.2), rgba(0, 240, 255, 0.1));
-    }
-
-    .focus-indicator {
-      display: none;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.7rem;
-      color: var(--accent-magenta);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      animation: focusPulse 1s infinite;
-    }
-
-    .terminal-card.focused .focus-indicator {
-      display: flex;
-    }
-
-    @keyframes focusPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
 
     .approval-buttons {
       display: none;
@@ -248,13 +220,22 @@
       color: #fff;
     }
 
-    .input-hint {
-      font-size: 0.65rem;
+    .approval-btn.dismiss {
+      flex: 0;
+      width: 32px;
+      min-width: 32px;
+      padding: 0.5rem;
+      background: rgba(100, 100, 100, 0.3);
       color: var(--text-dim);
-      text-align: center;
-      padding: 0.25rem;
-      border-top: 1px solid var(--border-glow);
+      font-size: 1rem;
     }
+
+    .approval-btn.dismiss:hover {
+      background: rgba(150, 150, 150, 0.4);
+      color: var(--text-primary);
+    }
+
+
 
     .terminal-card.waiting {
       border-color: var(--accent-yellow);
@@ -539,13 +520,10 @@
       return labelMap[status] || status;
     }
 
-    let focusedSession = null;
-
     function createTerminalCard(session) {
       const card = document.createElement('div');
       card.className = 'terminal-card';
       card.id = `session-${session.name}`;
-      card.tabIndex = 0; // Make focusable
       card.innerHTML = `
         <div class="terminal-header">
           <div class="terminal-title">
@@ -555,7 +533,6 @@
               <div class="terminal-dot green"></div>
             </div>
             <span class="session-name">${session.name}</span>
-            <div class="focus-indicator">⌨️ LIVE INPUT</div>
           </div>
           <div class="session-status idle" id="status-${session.name}">
             💤 Idle
@@ -568,37 +545,9 @@
           <button class="approval-btn approve" onclick="handleApproval('${session.name}', 'approve')">✓ Approve</button>
           <button class="approval-btn always" onclick="handleApproval('${session.name}', 'always')">✓✓ Always</button>
           <button class="approval-btn deny" onclick="handleApproval('${session.name}', 'deny')">✗ Deny</button>
+          <button class="approval-btn dismiss" onclick="dismissApproval('${session.name}')" title="Dismiss">✕</button>
         </div>
-        <div class="input-hint">Click to focus • Type to send input • ↑↓ for menu navigation</div>
       `;
-
-      // Focus handling
-      card.addEventListener('click', () => {
-        if (focusedSession) {
-          document.getElementById(`session-${focusedSession}`)?.classList.remove('focused');
-        }
-        focusedSession = session.name;
-        card.classList.add('focused');
-        card.focus();
-      });
-
-      // Keyboard input
-      card.addEventListener('keydown', (e) => {
-        if (focusedSession !== session.name) return;
-
-        e.preventDefault();
-
-        let input;
-        if (e.key === 'Enter') input = 'Enter';
-        else if (e.key === 'ArrowUp') input = 'ArrowUp';
-        else if (e.key === 'ArrowDown') input = 'ArrowDown';
-        else if (e.key === 'Escape') input = 'Escape';
-        else if (e.key === 'Backspace') input = 'Backspace';
-        else if (e.key.length === 1) input = e.key;
-        else return;
-
-        socket.emit('session:input', { name: session.name, input });
-      });
 
       return card;
     }
@@ -606,6 +555,13 @@
     function handleApproval(sessionName, action) {
       console.log(`Sending ${action} to ${sessionName}`);
       socket.emit('session:approve', { name: sessionName, action });
+    }
+
+    function dismissApproval(sessionName) {
+      const card = document.getElementById(`session-${sessionName}`);
+      if (card) {
+        card.classList.remove('waiting');
+      }
     }
 
     function updateSessionCount() {
@@ -700,42 +656,6 @@
       }
     });
 
-    // Click outside to unfocus
-    document.addEventListener('click', (e) => {
-      if (focusedSession) {
-        const card = document.getElementById(`session-${focusedSession}`);
-        if (card && !card.contains(e.target)) {
-          card.classList.remove('focused');
-          focusedSession = null;
-        }
-      }
-    });
-
-    // Global keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Quick approval shortcuts when focused
-      if (focusedSession) {
-        const card = document.getElementById(`session-${focusedSession}`);
-        if (card?.classList.contains('waiting')) {
-          if (e.key === '1' || e.key === 'y') {
-            e.preventDefault();
-            handleApproval(focusedSession, 'approve');
-          } else if (e.key === '2' || e.key === 'a') {
-            e.preventDefault();
-            handleApproval(focusedSession, 'always');
-          } else if (e.key === '3' || e.key === 'n') {
-            e.preventDefault();
-            handleApproval(focusedSession, 'deny');
-          }
-        }
-      }
-
-      // Escape to unfocus
-      if (e.key === 'Escape' && focusedSession) {
-        document.getElementById(`session-${focusedSession}`)?.classList.remove('focused');
-        focusedSession = null;
-      }
-    });
 
     // Add fadeOut animation
     const style = document.createElement('style');

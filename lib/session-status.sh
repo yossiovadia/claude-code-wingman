@@ -77,7 +77,7 @@ OUTPUT=$(tmux capture-pane -t "$SESSION_NAME" -p | tail -20)
 STATUS="unknown"
 DETAILS=""
 
-if echo "$OUTPUT" | grep -qE "Allow this tool call|y/n/always|Do you want to|❯ 1\. Yes|Yes, allow|No, deny|Allow once"; then
+if echo "$OUTPUT" | grep -qE "Allow this tool call|y/n/always|Do you want to|❯ 1\. Yes|Yes, allow|No, deny|Allow once|Yes, allow once|No, skip this"; then
     STATUS="waiting_approval"
     # Try to extract what's being approved
     DETAILS=$(echo "$OUTPUT" | grep -E "Create file|Write\(|Edit\(|Bash\(|Read\(" | head -1 || echo "Approval needed")
