@@ -77,22 +77,31 @@ OUTPUT=$(tmux capture-pane -t "$SESSION_NAME" -p | tail -20)
 STATUS="unknown"
 DETAILS=""
 
-if echo "$OUTPUT" | grep -qE "Allow this tool call|y/n/always|Do you want to|❯ 1\. Yes"; then
+if echo "$OUTPUT" | grep -qE "Allow this tool call|y/n/always|Do you want to|❯ 1\. Yes|Yes, allow|No, deny|Allow once"; then
     STATUS="waiting_approval"
     # Try to extract what's being approved
-    DETAILS=$(echo "$OUTPUT" | grep -E "Create file|Write\(|Edit\(|Bash\(" | head -1 || echo "Approval needed")
-elif echo "$OUTPUT" | grep -q "❯"; then
+    DETAILS=$(echo "$OUTPUT" | grep -E "Create file|Write\(|Edit\(|Bash\(|Read\(" | head -1 || echo "Approval needed")
+elif echo "$OUTPUT" | grep -qE "Error:|Failed:|Exception:|error\["; then
+    STATUS="error"
+    DETAILS=$(echo "$OUTPUT" | grep -E "Error:|Failed:|Exception:|error\[" | tail -1 || echo "")
+elif echo "$OUTPUT" | grep -qE "⏺|●|Thinking|Working|Reading|Writing|Executing|Running|Searching|Analyzing"; then
+    STATUS="working"
+    DETAILS=$(echo "$OUTPUT" | tail -3 | head -1 || echo "Processing...")
+elif echo "$OUTPUT" | grep -qE "❯|>\s*$|\\$\s*$|%\s*$"; then
     STATUS="idle"
     DETAILS="Ready for input"
-elif echo "$OUTPUT" | grep -qE "Error:|Failed:|Exception:"; then
-    STATUS="error"
-    DETAILS=$(echo "$OUTPUT" | grep -E "Error:|Failed:|Exception:" | tail -1 || echo "")
-elif echo "$OUTPUT" | grep -qE "Reading|Writing|Executing|Running"; then
-    STATUS="working"
-    DETAILS=$(echo "$OUTPUT" | tail -3 | head -1 || echo "")
+elif echo "$OUTPUT" | grep -qE "^\s*$" && [ -z "$(echo "$OUTPUT" | tr -d '[:space:]')" ]; then
+    STATUS="idle"
+    DETAILS="Empty terminal"
 else
-    STATUS="unknown"
-    DETAILS="Unable to determine state"
+    # Default to working if there's any content (likely processing)
+    if [ -n "$(echo "$OUTPUT" | tr -d '[:space:]')" ]; then
+        STATUS="working"
+        DETAILS=$(echo "$OUTPUT" | tail -1 | head -c 50 || echo "Processing...")
+    else
+        STATUS="idle"
+        DETAILS="Ready"
+    fi
 fi
 
 # Output

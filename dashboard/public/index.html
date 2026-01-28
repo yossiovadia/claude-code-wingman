@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wingman Command Center</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-terminal: #0d1117;
+      --accent-cyan: #00f0ff;
+      --accent-magenta: #ff00aa;
+      --accent-green: #00ff88;
+      --accent-yellow: #ffcc00;
+      --accent-red: #ff3366;
+      --text-primary: #e0e0e0;
+      --text-dim: #6a6a7a;
+      --border-glow: rgba(0, 240, 255, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.1) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border-glow);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.8), 0 0 60px rgba(255, 0, 170, 0.4); }
+    }
+
+    .logo h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .session-count {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+
+    /* Main container */
+    main {
+      padding: 1.5rem;
+      min-height: calc(100vh - 80px);
+    }
+
+    .sessions-grid {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Terminal card */
+    .terminal-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-glow);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .terminal-card:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .terminal-card.focused {
+      border-color: var(--accent-magenta);
+      box-shadow: 0 0 40px rgba(255, 0, 170, 0.4);
+    }
+
+    .terminal-card.focused .terminal-header {
+      background: linear-gradient(90deg, rgba(255, 0, 170, 0.2), rgba(0, 240, 255, 0.1));
+    }
+
+    .focus-indicator {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--accent-magenta);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: focusPulse 1s infinite;
+    }
+
+    .terminal-card.focused .focus-indicator {
+      display: flex;
+    }
+
+    @keyframes focusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .approval-buttons {
+      display: none;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+    }
+
+    .terminal-card.waiting .approval-buttons {
+      display: flex;
+    }
+
+    .approval-btn {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .approval-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .approval-btn.approve {
+      background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+      color: #000;
+    }
+
+    .approval-btn.always {
+      background: linear-gradient(135deg, var(--accent-cyan), #00bbdd);
+      color: #000;
+    }
+
+    .approval-btn.deny {
+      background: linear-gradient(135deg, var(--accent-red), #cc2244);
+      color: #fff;
+    }
+
+    .input-hint {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 0.25rem;
+      border-top: 1px solid var(--border-glow);
+    }
+
+    .terminal-card.waiting {
+      border-color: var(--accent-yellow);
+      animation: waitingPulse 2s infinite;
+    }
+
+    @keyframes waitingPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 204, 0, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 204, 0, 0.6); }
+    }
+
+    .terminal-header {
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.1), rgba(255, 0, 170, 0.1));
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-glow);
+    }
+
+    .terminal-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: var(--accent-red); }
+    .terminal-dot.yellow { background: var(--accent-yellow); }
+    .terminal-dot.green { background: var(--accent-green); }
+
+    .session-name {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .session-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .session-status.working {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--accent-green);
+      border: 1px solid var(--accent-green);
+    }
+
+    .session-status.waiting_approval {
+      background: rgba(255, 204, 0, 0.2);
+      color: var(--accent-yellow);
+      border: 1px solid var(--accent-yellow);
+      animation: statusPulse 1.5s infinite;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .session-status.idle {
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+    }
+
+    .session-status.error {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+    }
+
+    .terminal-content {
+      background: var(--bg-terminal);
+      padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .terminal-content::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .terminal-content::-webkit-scrollbar-thumb {
+      background: var(--accent-cyan);
+      border-radius: 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      animation: fadeIn 1s ease-out;
+    }
+
+    .empty-icon {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .empty-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--accent-cyan);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    /* Connection status */
+    .connection-status {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-glow);
+      background: rgba(10, 10, 15, 0.8);
+    }
+
+    .connection-status.connected {
+      border-color: var(--accent-green);
+    }
+
+    .connection-status.disconnected {
+      border-color: var(--accent-red);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sessions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .logo h1 {
+        font-size: 1rem;
+      }
+
+      .terminal-content {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🦅</div>
+      <h1>Wingman Command Center</h1>
+    </div>
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-dot"></div>
+        <span>Live</span>
+      </div>
+      <div class="status-item">
+        <span>Sessions:</span>
+        <span class="session-count" id="sessionCount">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="sessions-grid" id="sessionsGrid">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🚀</div>
+        <h2 class="empty-title">No Active Sessions</h2>
+        <p class="empty-subtitle">Waiting for Claude Code sessions to connect...</p>
+      </div>
+    </div>
+  </main>
+
+  <div class="connection-status" id="connectionStatus">
+    <div class="status-dot"></div>
+    <span>Connecting...</span>
+  </div>
+
+  <script>
+    const socket = io();
+    const sessionsGrid = document.getElementById('sessionsGrid');
+    const sessionCount = document.getElementById('sessionCount');
+    const emptyState = document.getElementById('emptyState');
+    const connectionStatus = document.getElementById('connectionStatus');
+
+    const sessions = new Map();
+
+    // ANSI to HTML converter (basic)
+    function ansiToHtml(text) {
+      // Basic ANSI escape code handling
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\x1b\[0m/g, '</span>')
+        .replace(/\x1b\[1m/g, '<span style="font-weight:bold">')
+        .replace(/\x1b\[2m/g, '<span style="opacity:0.7">')
+        .replace(/\x1b\[3m/g, '<span style="font-style:italic">')
+        .replace(/\x1b\[4m/g, '<span style="text-decoration:underline">')
+        .replace(/\x1b\[30m/g, '<span style="color:#000">')
+        .replace(/\x1b\[31m/g, '<span style="color:#ff5555">')
+        .replace(/\x1b\[32m/g, '<span style="color:#50fa7b">')
+        .replace(/\x1b\[33m/g, '<span style="color:#f1fa8c">')
+        .replace(/\x1b\[34m/g, '<span style="color:#6272a4">')
+        .replace(/\x1b\[35m/g, '<span style="color:#ff79c6">')
+        .replace(/\x1b\[36m/g, '<span style="color:#8be9fd">')
+        .replace(/\x1b\[37m/g, '<span style="color:#f8f8f2">')
+        .replace(/\x1b\[90m/g, '<span style="color:#6272a4">')
+        .replace(/\x1b\[91m/g, '<span style="color:#ff6e6e">')
+        .replace(/\x1b\[92m/g, '<span style="color:#69ff94">')
+        .replace(/\x1b\[93m/g, '<span style="color:#ffffa5">')
+        .replace(/\x1b\[94m/g, '<span style="color:#d6acff">')
+        .replace(/\x1b\[95m/g, '<span style="color:#ff92df">')
+        .replace(/\x1b\[96m/g, '<span style="color:#a4ffff">')
+        .replace(/\x1b\[97m/g, '<span style="color:#fff">')
+        .replace(/\x1b\[\d+(?:;\d+)*m/g, ''); // Remove any other escape codes
+    }
+
+    function getStatusClass(status) {
+      const statusMap = {
+        'working': 'working',
+        'idle': 'idle',
+        'waiting_approval': 'waiting_approval',
+        'error': 'error'
+      };
+      return statusMap[status] || 'idle';
+    }
+
+    function getStatusLabel(status) {
+      const labelMap = {
+        'working': '⚡ Working',
+        'idle': '💤 Idle',
+        'waiting_approval': '⏳ Waiting Approval',
+        'error': '❌ Error'
+      };
+      return labelMap[status] || status;
+    }
+
+    let focusedSession = null;
+
+    function createTerminalCard(session) {
+      const card = document.createElement('div');
+      card.className = 'terminal-card';
+      card.id = `session-${session.name}`;
+      card.tabIndex = 0; // Make focusable
+      card.innerHTML = `
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <div class="terminal-dots">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <span class="session-name">${session.name}</span>
+            <div class="focus-indicator">⌨️ LIVE INPUT</div>
+          </div>
+          <div class="session-status idle" id="status-${session.name}">
+            💤 Idle
+          </div>
+        </div>
+        <div class="terminal-content" id="content-${session.name}">
+          <span style="color: #6272a4">Connecting to session...</span>
+        </div>
+        <div class="approval-buttons" id="approval-${session.name}">
+          <button class="approval-btn approve" onclick="handleApproval('${session.name}', 'approve')">✓ Approve</button>
+          <button class="approval-btn always" onclick="handleApproval('${session.name}', 'always')">✓✓ Always</button>
+          <button class="approval-btn deny" onclick="handleApproval('${session.name}', 'deny')">✗ Deny</button>
+        </div>
+        <div class="input-hint">Click to focus • Type to send input • ↑↓ for menu navigation</div>
+      `;
+
+      // Focus handling
+      card.addEventListener('click', () => {
+        if (focusedSession) {
+          document.getElementById(`session-${focusedSession}`)?.classList.remove('focused');
+        }
+        focusedSession = session.name;
+        card.classList.add('focused');
+        card.focus();
+      });
+
+      // Keyboard input
+      card.addEventListener('keydown', (e) => {
+        if (focusedSession !== session.name) return;
+
+        e.preventDefault();
+
+        let input;
+        if (e.key === 'Enter') input = 'Enter';
+        else if (e.key === 'ArrowUp') input = 'ArrowUp';
+        else if (e.key === 'ArrowDown') input = 'ArrowDown';
+        else if (e.key === 'Escape') input = 'Escape';
+        else if (e.key === 'Backspace') input = 'Backspace';
+        else if (e.key.length === 1) input = e.key;
+        else return;
+
+        socket.emit('session:input', { name: session.name, input });
+      });
+
+      return card;
+    }
+
+    function handleApproval(sessionName, action) {
+      console.log(`Sending ${action} to ${sessionName}`);
+      socket.emit('session:approve', { name: sessionName, action });
+    }
+
+    function updateSessionCount() {
+      sessionCount.textContent = sessions.size;
+      if (sessions.size === 0) {
+        emptyState.style.display = 'flex';
+      } else {
+        emptyState.style.display = 'none';
+      }
+    }
+
+    // Socket event handlers
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      connectionStatus.className = 'connection-status connected';
+      connectionStatus.innerHTML = '<div class="status-dot"></div><span>Connected</span>';
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      connectionStatus.className = 'connection-status disconnected';
+      connectionStatus.innerHTML = '<div class="status-dot" style="background:var(--accent-red)"></div><span>Disconnected</span>';
+    });
+
+    socket.on('session:add', (session) => {
+      console.log('Session added:', session.name);
+      if (!sessions.has(session.name)) {
+        sessions.set(session.name, session);
+        const card = createTerminalCard(session);
+        sessionsGrid.appendChild(card);
+        updateSessionCount();
+      }
+    });
+
+    socket.on('session:remove', (data) => {
+      console.log('Session removed:', data.name);
+      sessions.delete(data.name);
+      const card = document.getElementById(`session-${data.name}`);
+      if (card) {
+        card.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => card.remove(), 300);
+      }
+      updateSessionCount();
+    });
+
+    socket.on('session:update', (data) => {
+      const content = document.getElementById(`content-${data.name}`);
+      const status = document.getElementById(`status-${data.name}`);
+      const card = document.getElementById(`session-${data.name}`);
+
+      if (content) {
+        // Check if user is near bottom before updating
+        const wasNearBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 50;
+        content.innerHTML = ansiToHtml(data.content);
+        // Only auto-scroll if user was already near bottom
+        if (wasNearBottom) {
+          content.scrollTop = content.scrollHeight;
+        }
+      }
+
+      if (status) {
+        const statusClass = getStatusClass(data.status);
+        status.className = `session-status ${statusClass}`;
+        status.textContent = getStatusLabel(data.status);
+      }
+
+      if (card) {
+        if (data.status === 'waiting_approval') {
+          card.classList.add('waiting');
+        } else {
+          card.classList.remove('waiting');
+        }
+      }
+    });
+
+    // Handle approval results
+    socket.on('approval:result', (data) => {
+      if (data.success) {
+        console.log(`Approval ${data.action} successful for ${data.name}`);
+        // Flash green briefly
+        const card = document.getElementById(`session-${data.name}`);
+        if (card) {
+          card.style.borderColor = 'var(--accent-green)';
+          card.style.boxShadow = '0 0 40px rgba(0, 255, 136, 0.5)';
+          setTimeout(() => {
+            card.style.borderColor = '';
+            card.style.boxShadow = '';
+          }, 1000);
+        }
+      } else {
+        console.error(`Approval failed for ${data.name}:`, data.error);
+      }
+    });
+
+    // Click outside to unfocus
+    document.addEventListener('click', (e) => {
+      if (focusedSession) {
+        const card = document.getElementById(`session-${focusedSession}`);
+        if (card && !card.contains(e.target)) {
+          card.classList.remove('focused');
+          focusedSession = null;
+        }
+      }
+    });
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // Quick approval shortcuts when focused
+      if (focusedSession) {
+        const card = document.getElementById(`session-${focusedSession}`);
+        if (card?.classList.contains('waiting')) {
+          if (e.key === '1' || e.key === 'y') {
+            e.preventDefault();
+            handleApproval(focusedSession, 'approve');
+          } else if (e.key === '2' || e.key === 'a') {
+            e.preventDefault();
+            handleApproval(focusedSession, 'always');
+          } else if (e.key === '3' || e.key === 'n') {
+            e.preventDefault();
+            handleApproval(focusedSession, 'deny');
+          }
+        }
+      }
+
+      // Escape to unfocus
+      if (e.key === 'Escape' && focusedSession) {
+        document.getElementById(`session-${focusedSession}`)?.classList.remove('focused');
+        focusedSession = null;
+      }
+    });
+
+    // Add fadeOut animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.9); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
