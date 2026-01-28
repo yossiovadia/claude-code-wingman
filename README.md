@@ -2,6 +2,8 @@
 
 Run Claude Code as a Clawdbot skill. Control it from WhatsApp, track progress, and approve actions - all without leaving your chat.
 
+![Wingman Command Center Dashboard](dashboard-screenshot.png)
+
 ## What It Does
 
 Clawdbot spawns Claude Code in a tmux session. When Claude Code needs permission to do something, **you get notified via WhatsApp** (or Clawdbot dashboard) and can approve or deny.
