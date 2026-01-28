@@ -40,6 +40,38 @@ Parse the JSON and respond with a human-readable summary.
 
 ---
 
+## ⚠️ CRITICAL: Always Use the Wingman Script
+
+**NEVER create tmux sessions or run Claude Code directly.** Always use the wingman script:
+
+```bash
+~/code/claude-code-orchestrator/claude-wingman.sh \
+  --session <session-name> \
+  --workdir <project-directory> \
+  --prompt "<task description>"
+```
+
+**Why this is mandatory:**
+- The wingman script auto-starts the master monitor daemon
+- Without it, you won't receive WhatsApp approval notifications
+- Raw tmux commands break the notification system
+
+**WRONG - Never do this:**
+```bash
+tmux new-session -d -s my-session
+tmux send-keys -t my-session "claude" Enter
+```
+
+**RIGHT - Always do this:**
+```bash
+~/code/claude-code-orchestrator/claude-wingman.sh \
+  --session my-session \
+  --workdir ~/code/myproject \
+  --prompt "Fix the bug in api.py"
+```
+
+---
+
 ## What It Does
 
 Orchestrates multiple Claude Code sessions in parallel, each working on different tasks in different directories. You monitor and control everything remotely via WhatsApp/chat.
@@ -111,37 +143,11 @@ chmod +x *.sh lib/*.sh
 - `tmux` (terminal multiplexer)
 - `jq` (JSON processor)
 
-## Core Philosophy: Always Use the Wingman Script
-
-**CRITICAL:** When interacting with Claude Code sessions, ALWAYS use the wingman script (`claude-wingman.sh`). Never run raw tmux commands directly.
-
-**Why:**
-- ✅ Ensures proper Enter key handling (C-m)
-- ✅ Consistent session management
-- ✅ Future-proof for dashboard/tracking features
-- ✅ Avoids bugs from manual tmux commands
-
-**Wrong (DON'T DO THIS):**
-```bash
-tmux send-keys -t my-session "Run tests"
-# ^ Might forget C-m, won't be tracked in dashboard
-```
-
-**Right (ALWAYS DO THIS):**
-```bash
-~/code/claude-code-orchestrator/claude-wingman.sh \
-  --session my-session \
-  --workdir ~/code/myproject \
-  --prompt "Run tests"
-```
-
----
-
 ## Usage from Clawdbot
 
 ### Start a New Session
 
-When a user asks for coding work, spawn Claude Code:
+When a user asks for coding work, use the wingman script:
 
 ```bash
 ~/code/claude-code-orchestrator/claude-wingman.sh \
