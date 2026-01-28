@@ -190,6 +190,19 @@ extract_approval_details() {
             details=$(echo "$pending_output" | grep -o "Edit([^)]*)" | head -1)
         elif echo "$pending_output" | grep -q "Read("; then
             details=$(echo "$pending_output" | grep -o "Read([^)]*)" | head -1)
+        elif echo "$pending_output" | grep -q "Fetch("; then
+            details=$(echo "$pending_output" | grep -o "Fetch([^)]*)" | head -1)
+        elif echo "$pending_output" | grep -q "WebFetch("; then
+            details=$(echo "$pending_output" | grep -o "WebFetch([^)]*)" | head -1)
+        fi
+
+        # For Fetch, also try to extract the URL from nearby lines
+        if [ -z "$details" ] || echo "$details" | grep -q "^Fetch()$"; then
+            local url_line
+            url_line=$(echo "$pending_output" | grep -E "https?://" | head -1)
+            if [ -n "$url_line" ]; then
+                details="Fetch: $url_line"
+            fi
         fi
     fi
 
@@ -197,8 +210,8 @@ extract_approval_details() {
         details="Tool execution approval needed"
     fi
 
-    if [ ${#details} -gt 200 ]; then
-        details="${details:0:200}..."
+    if [ ${#details} -gt 300 ]; then
+        details="${details:0:300}..."
     fi
 
     echo "$details"
