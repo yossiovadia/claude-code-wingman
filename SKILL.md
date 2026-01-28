@@ -244,9 +244,9 @@ Filter for Claude Code sessions:
 tmux ls | grep -E "(vsr|clawdbot|proxy|claude)"
 ```
 
-### View Auto-Approver Log (if needed)
+### View Monitor Log
 ```bash
-cat /tmp/auto-approver-<session-name>.log
+tail -f /tmp/claude-orchestrator/master-monitor.log
 ```
 
 ### Kill Session When Done
@@ -305,7 +305,7 @@ Progress: 8/10 tests passing
 
 1. **User requests coding work** (fix bug, add feature, refactor, etc.)
 2. **Clawdbot spawns Claude Code** via orchestrator script
-3. **Auto-approver handles permissions** in background
+3. **Master monitor watches** and sends WhatsApp notifications for approvals
 4. **Clawdbot monitors and reports** progress
 5. **User can attach anytime** to see/control directly
 6. **Claude Code does the work** autonomously ✅
@@ -353,10 +353,10 @@ Use descriptive names:
 ### Prompt Not Submitting
 The orchestrator sends Enter twice with delays. If stuck, user can attach and press Enter manually.
 
-### Auto-Approver Not Working
-Check logs: `cat /tmp/auto-approver-<session-name>.log`
+### Not Receiving WhatsApp Notifications
+Check monitor logs: `tail -f /tmp/claude-orchestrator/master-monitor.log`
 
-Should see: "Approval prompt detected! Navigating to option 2..."
+Verify monitor is running: `cat /tmp/claude-orchestrator/master-monitor.pid`
 
 ### Session Already Exists
 Kill it: `tmux kill-session -t <name>`
@@ -423,24 +423,5 @@ Reply with:
 
 **Response:** "✓ Session 'vsr-bugfix' approved (once)"
 
-### Start the Monitor Daemon
-
-```bash
-# Start monitoring all sessions (reads config from ~/.clawdbot/clawdbot.json)
-~/code/claude-code-orchestrator/master-monitor.sh &
-
-# With custom intervals
-~/code/claude-code-orchestrator/master-monitor.sh --poll-interval 5 --reminder-interval 120 &
-
-# Check if running
-cat /tmp/claude-orchestrator/master-monitor.pid
-
-# View logs
-tail -f /tmp/claude-orchestrator/master-monitor.log
-
-# Stop the daemon
-kill $(cat /tmp/claude-orchestrator/master-monitor.pid)
-```
-
-No environment variables needed - phone and webhook token are read from Clawdbot config.
+The master monitor daemon starts automatically when the first wingman session is created. No manual setup needed.
 

@@ -26,7 +26,28 @@ fi
 # Configuration
 SESSION_PREFIX="claude-auto"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUTO_APPROVER="$SCRIPT_DIR/auto-approver.sh"
+MASTER_MONITOR="$SCRIPT_DIR/master-monitor.sh"
+MONITOR_PID_FILE="/tmp/claude-orchestrator/master-monitor.pid"
+
+# Ensure master-monitor is running (auto-start on first use)
+ensure_monitor_running() {
+    if [ -f "$MONITOR_PID_FILE" ]; then
+        local pid
+        pid=$(cat "$MONITOR_PID_FILE")
+        if kill -0 "$pid" 2>/dev/null; then
+            return 0  # Already running
+        fi
+    fi
+
+    # Start master-monitor in background
+    echo "[Wingman] Starting master monitor daemon..."
+    "$MASTER_MONITOR" > /dev/null 2>&1 &
+    sleep 1
+
+    if [ -f "$MONITOR_PID_FILE" ]; then
+        echo "[Wingman] Master monitor started (PID: $(cat "$MONITOR_PID_FILE"))"
+    fi
+}
 
 # Usage
 usage() {
@@ -38,7 +59,6 @@ usage() {
     echo "  --prompt <text>       Prompt to send to Claude Code"
     echo "  --monitor             Monitor session in real-time (blocks)"
     echo "  --wait                Wait for completion"
-    echo "  --auto                Auto-approve all prompts (default: interactive)"
     echo ""
     echo "Examples:"
     echo "  $0 --workdir ~/code/myproject --prompt 'Add error handling to api.py'"
@@ -52,7 +72,6 @@ WORKDIR="$(pwd)"
 PROMPT=""
 MONITOR=false
 WAIT=false
-INTERACTIVE=true  # Default to interactive mode for safety
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -74,10 +93,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --wait)
             WAIT=true
-            shift
-            ;;
-        --auto)
-            INTERACTIVE=false
             shift
             ;;
         -h|--help)
@@ -124,24 +139,8 @@ tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 echo "[Wingman] Creating tmux session..."
 tmux new-session -d -s "$SESSION_NAME" -c "$WORKDIR"
 
-# Step 2: Start approver in background
-if [ "$INTERACTIVE" = true ]; then
-    echo "[Wingman] Starting interactive approver..."
-    LOG_FILE="/tmp/interactive-approver-${SESSION_NAME}.log"
-    INTERACTIVE_APPROVER="$SCRIPT_DIR/interactive-approver.sh"
-    touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
-    "$INTERACTIVE_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
-    APPROVER_PID=$!
-    echo "[Wingman] Interactive approver running (PID: $APPROVER_PID)"
-    echo "[Wingman] You'll be notified when approval is needed"
-else
-    echo "[Wingman] Starting auto-approver..."
-    LOG_FILE="/tmp/auto-approver-${SESSION_NAME}.log"
-    touch "$LOG_FILE" && chmod 600 "$LOG_FILE"
-    "$AUTO_APPROVER" "$SESSION_NAME" > "$LOG_FILE" 2>&1 &
-    APPROVER_PID=$!
-    echo "[Wingman] Auto-approver running (PID: $APPROVER_PID)"
-fi
+# Step 2: Ensure master monitor is running for WhatsApp notifications
+ensure_monitor_running
 
 # Step 3: Start Claude Code
 echo "[Wingman] Launching Claude Code..."
@@ -181,8 +180,9 @@ echo ""
 echo "Commands:"
 echo "  Attach:    tmux attach -t $SESSION_NAME"
 echo "  Monitor:   tmux capture-pane -t $SESSION_NAME -p"
-echo "  Logs:      cat $LOG_FILE"
 echo "  Kill:      tmux kill-session -t $SESSION_NAME"
+echo ""
+echo "You'll receive WhatsApp notifications when approval is needed."
 echo ""
 
 # Monitor mode
@@ -193,9 +193,6 @@ if [ "$MONITOR" = true ]; then
         clear
         echo "=== Session: $SESSION_NAME ==="
         tmux capture-pane -t "$SESSION_NAME" -p
-        echo ""
-        echo "=== Auto-Approver Log ==="
-        tail -5 "$LOG_FILE" 2>/dev/null || echo "(no log yet)"
         sleep 2
     done
     echo "[Wingman] Session ended."
@@ -208,7 +205,4 @@ if [ "$WAIT" = true ] && [ "$MONITOR" = false ]; then
         sleep 5
     done
     echo "[Wingman] Session completed."
-    echo ""
-    echo "=== Auto-Approver Log ==="
-    cat "$LOG_FILE"
 fi
