@@ -160,18 +160,37 @@ extract_approval_details() {
 
     local details=""
 
-    if echo "$output" | grep -q "Bash("; then
-        details=$(echo "$output" | grep -o "Bash([^)]*)" | tail -1)
-    elif echo "$output" | grep -q "Write("; then
-        details=$(echo "$output" | grep -o "Write([^)]*)" | tail -1)
-    elif echo "$output" | grep -q "Edit("; then
-        details=$(echo "$output" | grep -o "Edit([^)]*)" | tail -1)
-    elif echo "$output" | grep -q "Read("; then
-        details=$(echo "$output" | grep -o "Read([^)]*)" | tail -1)
-    fi
+    # Look for the approval prompt line first - it tells us what's being requested
+    local approval_line
+    approval_line=$(echo "$output" | grep -E "Do you want to" | tail -1)
 
-    if [ -z "$details" ]; then
-        details=$(echo "$output" | grep -E "Do you want|Allow this" | tail -3 | tr '\n' ' ')
+    if [ -n "$approval_line" ]; then
+        # The approval line itself tells us what's happening
+        details="$approval_line"
+    else
+        # Fallback: find the last tool call that appears AFTER any "Done." line
+        # This ensures we get the pending one, not a completed one
+        local last_done_line
+        last_done_line=$(echo "$output" | grep -n "^⏺ Done" | tail -1 | cut -d: -f1)
+
+        if [ -n "$last_done_line" ]; then
+            # Get output after the last "Done." line
+            local pending_output
+            pending_output=$(echo "$output" | tail -n +$((last_done_line + 1)))
+        else
+            pending_output="$output"
+        fi
+
+        # Now look for tool calls in the pending section
+        if echo "$pending_output" | grep -q "Bash("; then
+            details=$(echo "$pending_output" | grep -o "Bash([^)]*)" | head -1)
+        elif echo "$pending_output" | grep -q "Write("; then
+            details=$(echo "$pending_output" | grep -o "Write([^)]*)" | head -1)
+        elif echo "$pending_output" | grep -q "Edit("; then
+            details=$(echo "$pending_output" | grep -o "Edit([^)]*)" | head -1)
+        elif echo "$pending_output" | grep -q "Read("; then
+            details=$(echo "$pending_output" | grep -o "Read([^)]*)" | head -1)
+        fi
     fi
 
     if [ -z "$details" ]; then
