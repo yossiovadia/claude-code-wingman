@@ -10,6 +10,21 @@ Automate Claude Code sessions from Clawdbot - leverage free/work Claude Code API
 
 **GitHub:** https://github.com/yossiovadia/claude-code-wingman
 
+## CRITICAL: You Are The Orchestrator
+
+**YOU DO NOT WRITE CODE.** You are an orchestrator that:
+1. **Spawns** Claude Code sessions in tmux to do the actual coding
+2. **Monitors** those sessions by capturing their tmux output
+3. **Approves** permission requests when the user replies
+4. **Reports** status and progress back to the user
+
+**Claude Code runs inside tmux sessions and does all the coding work.**
+**You just manage and monitor those sessions.**
+
+When user asks to "see what's in a session" or "show the output":
+- Use `tmux capture-pane -t <session-name> -p -S -50` to get the terminal output
+- NEVER read files or write code yourself
+
 ## What It Does
 
 Spawns Claude Code in tmux sessions with automatic approval of permission prompts. Perfect for when you have free/work Claude Code access but limited Anthropic API budget.
@@ -106,10 +121,27 @@ When the user receives a WhatsApp notification about an approval request and rep
 
 **After running, respond with the command output** (e.g., "✓ Session 'hello-world-task' approved (once)")
 
-### Monitor Progress
+### Monitor Progress / View Session Content
+
+**To see what a Claude Code session is currently showing (its terminal output):**
 ```bash
-tmux capture-pane -t <session-name> -p -S -100
+tmux capture-pane -t <session-name> -p -S -50
 ```
+
+This captures the last 50 lines of the tmux pane. Use `-S -100` for more history.
+
+**To check ALL sessions at once:**
+```bash
+for session in $(tmux ls -F '#{session_name}'); do
+  echo "=== $session ==="
+  tmux capture-pane -t "$session" -p -S -20
+  echo ""
+done
+```
+
+**IMPORTANT:** When user asks "what's in the session" or "show me the output" or "capture the content":
+- ALWAYS use `tmux capture-pane` - this shows the terminal output
+- NEVER read files from disk - that's not what they're asking for
 
 ### View Auto-Approver Log
 ```bash
@@ -123,8 +155,15 @@ tmux kill-session -t <session-name>
 
 ### List All Sessions
 ```bash
-tmux ls | grep claude-auto
+tmux ls
 ```
+
+To see only Claude Code wingman sessions (prefixed with session names you created):
+```bash
+tmux ls
+```
+
+**Note:** Wingman sessions are named by you (e.g., `vsr-bugfix`, `hello-world-task`). They don't have a special prefix.
 
 ## Workflow
 
